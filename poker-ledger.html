@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Ledger — Home Game</title>
+<style>
+  :root {
+    --ink: #071b14;
+    --felt: #0e3527;
+    --felt-light: #164a37;
+    --felt-glow: #1d5c44;
+    --brass: #c9a227;
+    --brass-bright: #e8c85a;
+    --brass-dim: #8a6f22;
+    --brass-ink: #1a1200;
+    --parchment: #f3ead9;
+    --parchment-dim: #b6a988;
+    --burgundy: #8a3a3a;
+    --burgundy-bright: #d98a76;
+    --line: rgba(243, 234, 217, 0.10);
+    --line-strong: rgba(243, 234, 217, 0.22);
+    --serif: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background-color: var(--ink);
+    background-image:
+      radial-gradient(ellipse 900px 460px at 50% -8%, var(--felt-glow) 0%, transparent 62%),
+      repeating-linear-gradient(135deg, rgba(255,255,255,0.014) 0px, rgba(255,255,255,0.014) 1px, transparent 1px, transparent 26px),
+      linear-gradient(180deg, var(--felt) 0%, var(--ink) 82%);
+    background-attachment: fixed;
+    color: var(--parchment);
+    font-family: var(--sans);
+    min-height: 100vh;
+    padding-bottom: 60px;
+  }
+
+  .page { max-width: 640px; margin: 0 auto; }
+
+  .site-header {
+    text-align: center;
+    padding: 34px 20px 20px;
+  }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .brand-mark {
+    font-size: 32px;
+    line-height: 1;
+    color: var(--brass-bright);
+    font-family: var(--serif);
+  }
+  .brand-text { text-align: left; }
+  .site-header h1 {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 29px;
+    margin: 0;
+    letter-spacing: 0.3px;
+    color: var(--parchment);
+  }
+  .site-header p {
+    margin: 3px 0 0;
+    color: var(--parchment-dim);
+    font-size: 13px;
+  }
+  .header-rule {
+    height: 1px;
+    max-width: 320px;
+    margin: 18px auto 0;
+    background: linear-gradient(90deg, transparent, var(--brass-dim), transparent);
+  }
+
+  .copy-link-btn { margin: 14px auto 0; display: block; }
+
+  .status-banner {
+    max-width: 600px;
+    margin: 14px auto 0;
+    padding: 12px 14px;
+    border-radius: 9px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .status-banner.info {
+    background: rgba(201, 162, 39, 0.13);
+    border: 1px solid rgba(201, 162, 39, 0.3);
+    color: var(--brass-bright);
+  }
+  .status-banner.error {
+    background: rgba(138, 58, 58, 0.16);
+    border: 1px solid rgba(138, 58, 58, 0.32);
+    color: var(--burgundy-bright);
+  }
+  .banner-dismiss {
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 17px;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 0 2px;
+  }
+
+  .tab-rail {
+    display: flex;
+    justify-content: center;
+    gap: 7px;
+    overflow-x: auto;
+    padding: 16px 16px 4px;
+    max-width: 640px;
+    margin: 0 auto;
+    scrollbar-width: none;
+  }
+  .tab-rail::-webkit-scrollbar { display: none; }
+
+  .tab-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--line);
+    color: var(--parchment-dim);
+    padding: 9px 15px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-family: var(--sans);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .tab-btn svg { width: 15px; height: 15px; stroke: currentColor; flex-shrink: 0; }
+  .tab-btn.active {
+    background: var(--brass);
+    border-color: var(--brass);
+    color: var(--brass-ink);
+    font-weight: 700;
+  }
+  .tab-btn:hover:not(.active) {
+    border-color: var(--line-strong);
+    color: var(--parchment);
+  }
+
+  main {
+    max-width: 600px;
+    margin: 20px auto 0;
+    padding: 0 16px;
+  }
+
+  .panel { display: none; }
+  .panel.active {
+    display: block;
+    animation: panelIn 0.28s ease;
+  }
+  @keyframes panelIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .panel.active { animation: none; }
+  }
+
+  .card {
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.035), rgba(0,0,0,0.10)),
+      rgba(9, 38, 29, 0.55);
+    border: 1px solid var(--line);
+    border-radius: 13px;
+    padding: 20px;
+    margin-bottom: 18px;
+    box-shadow: 0 10px 26px rgba(0,0,0,0.28);
+  }
+
+  .panel-head { margin-bottom: 14px; }
+  .panel-head h2 {
+    font-family: var(--serif);
+    font-size: 19px;
+    margin: 0 0 3px;
+    color: var(--brass-bright);
+  }
+  .panel-head .panel-sub {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--parchment-dim);
+  }
+
+  .board { display: flex; flex-direction: column; }
+
+  .board-row {
+    display: grid;
+    grid-template-columns: 24px 38px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 2px;
+    border-bottom: 1px solid var(--line);
+  }
+  .board-row:last-child { border-bottom: none; }
+  .board-row.small { grid-template-columns: 20px 30px 1fr auto; padding: 8px 2px; }
+
+  .rank {
+    font-family: var(--serif);
+    font-size: 13px;
+    color: var(--parchment-dim);
+    text-align: center;
+    width: 22px;
+    height: 22px;
+    line-height: 22px;
+    border-radius: 50%;
+    margin: 0 auto;
+  }
+  .rank.medal-1 { background: var(--brass-bright); color: var(--brass-ink); font-weight: 700; }
+  .rank.medal-2 { background: #c7c7c7; color: #1a1a1a; font-weight: 700; }
+  .rank.medal-3 { background: #b8794a; color: #1a1200; font-weight: 700; }
+
+  .avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 12.5px;
+    color: rgba(255,255,255,0.94);
+    flex-shrink: 0;
+    font-family: var(--sans);
+  }
+  .avatar.sm { width: 28px; height: 28px; font-size: 11px; }
+
+  .board-main { min-width: 0; }
+  .board-name {
+    font-size: 14.5px;
+    font-weight: 600;
+    color: var(--parchment);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .board-sub {
+    font-size: 11px;
+    color: var(--parchment-dim);
+    margin-top: 1px;
+  }
+
+  .board-amount {
+    font-variant-numeric: tabular-nums;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .board-amount.pos { color: var(--brass-bright); }
+  .board-amount.neg { color: var(--burgundy-bright); }
+  .board-amount.zero { color: var(--parchment-dim); }
+
+  .empty-state {
+    color: var(--parchment-dim);
+    font-size: 13px;
+    text-align: center;
+    padding: 26px 10px;
+  }
+
+  label {
+    display: block;
+    font-size: 12px;
+    color: var(--parchment-dim);
+    margin-bottom: 4px;
+  }
+
+  input[type="text"], input[type="number"], input[type="date"], input[type="password"] {
+    width: 100%;
+    background: rgba(0,0,0,0.28);
+    border: 1px solid var(--line);
+    color: var(--parchment);
+    padding: 9px 10px;
+    border-radius: 7px;
+    font-size: 14px;
+    font-family: var(--sans);
+    font-variant-numeric: tabular-nums;
+  }
+  input:focus {
+    outline: 2px solid var(--brass);
+    outline-offset: 1px;
+  }
+
+  .field-row { display: flex; gap: 10px; margin-bottom: 10px; }
+  .field-row > div { flex: 1; }
+
+  .btn {
+    background: var(--brass);
+    color: var(--brass-ink);
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: var(--sans);
+    transition: background 0.15s ease, transform 0.05s ease;
+  }
+  .btn:hover { background: var(--brass-bright); }
+  .btn:active { transform: translateY(1px); }
+  .btn.secondary {
+    background: transparent;
+    border: 1px solid var(--line-strong);
+    color: var(--parchment);
+    font-weight: 600;
+  }
+  .btn.secondary:hover { border-color: var(--brass); color: var(--brass-bright); background: transparent; }
+  .btn.small { padding: 6px 11px; font-size: 12px; }
+  .btn.danger {
+    background: transparent;
+    border: 1px solid var(--burgundy-bright);
+    color: var(--burgundy-bright);
+    font-weight: 600;
+  }
+  .btn.danger:hover { background: rgba(138,58,58,0.15); }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .entry-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 2px;
+    border-bottom: 1px solid var(--line);
+  }
+  .entry-row-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .entry-fields {
+    display: none;
+    padding: 2px 2px 12px 44px;
+    border-bottom: 1px solid var(--line);
+  }
+  .entry-fields.open { display: block; }
+  .entry-block:last-child .entry-fields { border-bottom: none; }
+
+  .switch { position: relative; width: 38px; height: 22px; flex-shrink: 0; display: inline-block; cursor: pointer; }
+  .switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .switch .track {
+    position: absolute; inset: 0;
+    background: rgba(255,255,255,0.12);
+    border-radius: 999px;
+    transition: background 0.15s ease;
+  }
+  .switch .knob {
+    position: absolute; top: 2px; left: 2px;
+    width: 18px; height: 18px;
+    background: var(--parchment-dim);
+    border-radius: 50%;
+    transition: transform 0.15s ease, background 0.15s ease;
+  }
+  .switch input:checked + .track { background: var(--brass); }
+  .switch input:checked + .track .knob { transform: translateX(16px); background: var(--brass-ink); }
+
+  .balance-check {
+    font-size: 13px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin: 14px 0 4px;
+    text-align: center;
+    border: 1px solid transparent;
+  }
+  .balance-check.ok {
+    background: rgba(201, 162, 39, 0.13);
+    color: var(--brass-bright);
+    border-color: rgba(201, 162, 39, 0.28);
+  }
+  .balance-check.bad {
+    background: rgba(138, 58, 58, 0.16);
+    color: var(--burgundy-bright);
+    border-color: rgba(138, 58, 58, 0.32);
+  }
+
+  .night-card {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    background: rgba(0,0,0,0.14);
+  }
+  .night-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .night-summary:hover { background: rgba(255,255,255,0.03); }
+  .night-date {
+    font-family: var(--serif);
+    font-size: 15px;
+    color: var(--parchment);
+  }
+  .night-sub { font-size: 11px; color: var(--parchment-dim); margin-top: 2px; }
+  .night-head-right { display: flex; align-items: center; gap: 10px; }
+  .chevron { color: var(--parchment-dim); transition: transform 0.2s ease; flex-shrink: 0; }
+  .night-card.open .chevron { transform: rotate(180deg); }
+  .night-detail {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.28s ease;
+    padding: 0 14px;
+  }
+  .night-card.open .night-detail { max-height: 1200px; padding: 0 14px 14px; }
+  .settle-block {
+    margin-top: 6px;
+    border-top: 1px solid var(--line);
+    padding-top: 10px;
+  }
+  .settle-title {
+    font-size: 11px;
+    text-transform: none;
+    color: var(--parchment-dim);
+    margin-bottom: 6px;
+  }
+  .settle-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13.5px;
+    padding: 5px 2px;
+    color: var(--parchment-dim);
+  }
+  .settle-row b { color: var(--parchment); }
+  .settle-arrow { color: var(--brass-bright); }
+  .settle-amount { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--brass-bright); font-weight: 600; }
+
+  .player-chip-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 2px;
+    border-bottom: 1px solid var(--line);
+  }
+  .player-chip-row:last-child { border-bottom: none; }
+  .player-chip-name { font-size: 14.5px; font-weight: 600; flex: 1; }
+
+  .add-player-row { display: flex; gap: 8px; }
+  .add-player-row input { flex: 1; }
+
+  .icon-btn {
+    background: none;
+    border: 1px solid var(--line);
+    color: var(--parchment-dim);
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .icon-btn svg { width: 14px; height: 14px; stroke: currentColor; }
+  .icon-btn:hover { color: var(--burgundy-bright); border-color: var(--burgundy-bright); }
+
+  .loading { text-align: center; padding: 46px 20px; color: var(--parchment-dim); font-size: 13px; }
+
+  .login-wrap { max-width: 360px; margin: 60px auto 0; padding: 0 16px; }
+  .login-card {
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.045), rgba(0,0,0,0.12)),
+      rgba(9, 38, 29, 0.6);
+    border: 1px solid var(--line);
+    border-radius: 15px;
+    padding: 30px 24px;
+    box-shadow: 0 22px 44px rgba(0,0,0,0.35);
+    text-align: center;
+  }
+  .login-emblem {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    background: var(--brass);
+    color: var(--brass-ink);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 21px;
+    font-family: var(--serif);
+    margin: 0 auto 14px;
+  }
+  .login-card h2 {
+    font-family: var(--serif);
+    font-size: 20px;
+    margin: 0 0 4px;
+    color: var(--parchment);
+  }
+  .login-sub { color: var(--parchment-dim); font-size: 12.5px; margin: 0 0 20px; }
+  .login-card label { text-align: left; }
+  .login-error {
+    color: var(--burgundy-bright);
+    font-size: 13px;
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: center;
+  }
+
+  body.role-view .edit-only { display: none !important; }
+
+  @media (max-width: 480px) {
+    .site-header { padding: 24px 16px 16px; }
+    .brand { gap: 10px; }
+    .brand-mark { font-size: 26px; }
+    .site-header h1 { font-size: 24px; }
+    .site-header p { font-size: 12px; }
+
+    .tab-rail { padding: 12px 12px 4px; gap: 6px; }
+    .tab-btn { padding: 9px 12px; font-size: 12.5px; }
+    .tab-btn span { display: none; }
+    .tab-btn svg { width: 17px; height: 17px; }
+
+    main { padding: 0 12px; }
+    .card { padding: 15px; border-radius: 11px; }
+    .panel-head h2 { font-size: 17px; }
+
+    .board-row { grid-template-columns: 20px 32px 1fr auto; gap: 9px; padding: 10px 0; }
+    .board-row.small { grid-template-columns: 18px 26px 1fr auto; }
+    .board-name { font-size: 13.5px; }
+    .board-amount { font-size: 14px; }
+
+    .field-row { gap: 8px; }
+    .btn-row .btn { flex: 1 1 auto; }
+
+    .night-summary { padding: 12px 13px; }
+    .night-head-right { gap: 7px; }
+
+    .login-wrap { margin: 36px auto 0; }
+    .login-card { padding: 24px 18px; }
+    .status-banner { margin: 10px 12px 0; padding: 10px 12px; font-size: 12.5px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <header class="site-header">
+    <div class="brand">
+      <span class="brand-mark">&#9824;</span>
+      <div class="brand-text">
+        <h1>The Ledger</h1>
+        <p>Home game buy-ins, cash-outs, and who owes who</p>
+      </div>
+    </div>
+    <div class="header-rule"></div>
+    <button class="btn secondary small copy-link-btn" id="copy-link-btn" style="display:none;">Copy invite link</button>
+  </header>
+
+  <div id="status-banner" class="status-banner" style="display:none;"></div>
+
+  <div id="login-screen" class="login-wrap">
+    <div class="login-card">
+      <div class="login-emblem">&#9824;</div>
+      <h2>Sign in</h2>
+      <p class="login-sub">Enter your table credentials</p>
+      <label for="login-username">Username</label>
+      <input type="text" id="login-username" autocomplete="username">
+      <label for="login-password" style="margin-top:10px;">Password</label>
+      <input type="password" id="login-password" autocomplete="current-password">
+      <div id="login-error" class="login-error" style="display:none;">Wrong username or password.</div>
+      <button class="btn" id="login-btn" style="margin-top:16px; width:100%;">Sign in</button>
+    </div>
+  </div>
+
+  <nav id="main-nav" class="tab-rail" style="display:none;"></nav>
+
+  <main id="main-content" style="display:none;">
+    <div id="loading" class="loading">Shuffling the ledger…</div>
+
+    <div id="app" style="display:none;">
+
+      <section id="panel-standings" class="panel active">
+        <div class="panel-head">
+          <h2>Running totals</h2>
+          <p class="panel-sub">Net winnings across every night recorded</p>
+        </div>
+        <div class="card"><div id="standings-list" class="board"></div></div>
+      </section>
+
+      <section id="panel-averages" class="panel">
+        <div class="panel-head">
+          <h2>Average per night</h2>
+          <p class="panel-sub">Net winnings divided by nights played</p>
+        </div>
+        <div class="card"><div id="averages-list" class="board"></div></div>
+      </section>
+
+      <section id="panel-newnight" class="panel edit-only">
+        <div class="panel-head">
+          <h2>Record a game night</h2>
+          <p class="panel-sub">Toggle who played, then enter buy-in and cash-out</p>
+        </div>
+        <div class="card">
+          <div class="field-row">
+            <div>
+              <label for="night-date">Date</label>
+              <input type="date" id="night-date">
+            </div>
+          </div>
+          <div id="entry-list"></div>
+          <div id="balance-check" class="balance-check ok" style="display:none;"></div>
+          <div class="btn-row" style="margin-top:14px;">
+            <button class="btn" id="save-night-btn">Save night &amp; settle up</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="panel-history" class="panel">
+        <div class="panel-head">
+          <h2>Past nights</h2>
+          <p class="panel-sub">Ranked best to worst, with the settle-up worked out</p>
+        </div>
+        <div id="history-list"></div>
+      </section>
+
+      <section id="panel-players" class="panel">
+        <div class="panel-head">
+          <h2>Players</h2>
+          <p class="panel-sub">The regulars at the table</p>
+        </div>
+        <div class="card">
+          <div id="players-list"></div>
+          <div class="add-player-row edit-only" style="margin-top:12px;">
+            <input type="text" id="new-player-name" placeholder="New player name">
+            <button class="btn small" id="add-player-btn">Add</button>
+          </div>
+        </div>
+        <div class="card edit-only">
+          <h2 style="font-family:var(--serif); font-size:16px; color:var(--burgundy-bright); margin:0 0 8px;">Reset</h2>
+          <p style="font-size:13px; color: var(--parchment-dim); margin:0 0 12px;">Clears every player and every recorded night for the whole group. Can't be undone.</p>
+          <button class="btn danger" id="reset-btn">Reset all data</button>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+</div>
+
+<script>
+const JSONBIN_BASE = 'https://api.jsonbin.io/v3/b';
+const JSONBIN_MASTER_KEY = '$2a$10$myizIQoz5j3v3lZZGkwbEuqKYqMAOj9Yg/4DBfhZ8s7fD9bmA/KgC';
+let BLOB_ID = null;
+let state = { players: [], nights: [] };
+
+function showBanner(message, type, dismissible) {
+  const el = document.getElementById('status-banner');
+  el.className = 'status-banner ' + type;
+  el.innerHTML = escapeHtml(message) + (dismissible ? ' <button class="banner-dismiss" id="banner-dismiss-btn" aria-label="Dismiss">&times;</button>' : '');
+  el.style.display = 'flex';
+  if (dismissible) {
+    document.getElementById('banner-dismiss-btn').addEventListener('click', () => { el.style.display = 'none'; });
+  }
+}
+
+function getBlobIdFromUrl() {
+  const hash = window.location.hash || '';
+  const match = hash.match(/g=([a-zA-Z0-9]+)/);
+  return match ? match[1] : null;
+}
+
+function setBlobIdInUrl(id) {
+  const newHash = '#g=' + id;
+  history.replaceState(null, '', window.location.pathname + window.location.search + newHash);
+}
+
+async function createBlob(initialData) {
+  const res = await fetch(JSONBIN_BASE, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Master-Key': JSONBIN_MASTER_KEY,
+      'X-Bin-Private': 'false'
+    },
+    body: JSON.stringify(initialData)
+  });
+  if (!res.ok) throw new Error('CREATE_FAILED');
+  const json = await res.json();
+  if (!json || !json.metadata || !json.metadata.id) throw new Error('NO_ID');
+  return json.metadata.id;
+}
+
+async function fetchBlob(id) {
+  const res = await fetch(`${JSONBIN_BASE}/${id}/latest`, {
+    headers: { 'X-Master-Key': JSONBIN_MASTER_KEY }
+  });
+  if (res.status === 404) throw new Error('NOT_FOUND');
+  if (!res.ok) throw new Error('FETCH_FAILED');
+  const json = await res.json();
+  return json.record;
+}
+
+async function updateBlob(id, data) {
+  const res = await fetch(`${JSONBIN_BASE}/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Master-Key': JSONBIN_MASTER_KEY
+    },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error('SAVE_FAILED');
+  return await res.json();
+}
+
+const SEED_PLAYERS = ['Pietro','Aarjav','Chetan','Gianluca','Amaan','Johns','Francesco','Suhail','Tim','Zouqi','Nitin'];
+
+const SEED_NIGHTS_RAW = [
+  { date: '2026-08-22', entries: [
+    { player: 'Pietro', buyIn: 10, cashOut: 11.6 },
+    { player: 'Aarjav', buyIn: 20, cashOut: 0 },
+    { player: 'Chetan', buyIn: 20, cashOut: 1 },
+    { player: 'Amaan', buyIn: 10, cashOut: 23.8 },
+    { player: 'Johns', buyIn: 10, cashOut: 61.8 },
+    { player: 'Francesco', buyIn: 20, cashOut: 0 },
+    { player: 'Zouqi', buyIn: 10, cashOut: 0 }
+  ]},
+  { date: '2026-09-04', entries: [
+    { player: 'Pietro', buyIn: 10, cashOut: 31.2 },
+    { player: 'Aarjav', buyIn: 10, cashOut: 53.5 },
+    { player: 'Chetan', buyIn: 20, cashOut: 4 },
+    { player: 'Gianluca', buyIn: 10, cashOut: 0 },
+    { player: 'Suhail', buyIn: 30, cashOut: 34 },
+    { player: 'Tim', buyIn: 30, cashOut: 7.3 },
+    { player: 'Zouqi', buyIn: 10, cashOut: 0 },
+    { player: 'Nitin', buyIn: 10, cashOut: 0 }
+  ]},
+  { date: '2026-09-11', entries: [
+    { player: 'Pietro', buyIn: 10, cashOut: 21.4 },
+    { player: 'Aarjav', buyIn: 10, cashOut: 22.1 },
+    { player: 'Chetan', buyIn: 10, cashOut: 0 },
+    { player: 'Gianluca', buyIn: 25, cashOut: 10 },
+    { player: 'Amaan', buyIn: 20, cashOut: 5.4 },
+    { player: 'Johns', buyIn: 10, cashOut: 42 },
+    { player: 'Francesco', buyIn: 20, cashOut: 4.4 }
+  ]}
+];
+
+function buildSeedState() {
+  const nights = SEED_NIGHTS_RAW.map((n, i) => {
+    const nets = n.entries.map(e => ({ player: e.player, amount: e.cashOut - e.buyIn }));
+    const settlements = computeSettlements(nets);
+    return { id: Date.now() - (SEED_NIGHTS_RAW.length - i), date: n.date, entries: n.entries, settlements };
+  }).reverse();
+  return { players: SEED_PLAYERS.slice(), nights };
+}
+
+const AVATAR_PALETTE = ['#8a3a3a','#1f6f54','#2b4c7e','#8a5a2b','#5c3a7e','#3a7e78','#7e5c3a','#3a5c7e','#6a6a3a','#3a4a6a'];
+
+function avatarColor(name) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length];
+}
+
+function initials(name) {
+  const parts = name.trim().split(/\s+/);
+  const first = parts[0] ? parts[0][0] : '?';
+  const second = parts[1] ? parts[1][0] : '';
+  return (first + second).toUpperCase();
+}
+
+function moneyFmt(n) {
+  const abs = Math.abs(n).toFixed(2);
+  return n < -0.004 ? `(£${abs})` : `£${abs}`;
+}
+
+function signedMoneyFmt(n) {
+  const abs = Math.abs(n).toFixed(2);
+  if (n > 0.004) return `+£${abs}`;
+  if (n < -0.004) return `-£${abs}`;
+  return `£${abs}`;
+}
+
+const ICONS = {
+  standings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="20" x2="4" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="20" y1="20" x2="20" y2="14"/></svg>',
+  averages: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 6"/><polyline points="15 6 21 6 21 12"/></svg>',
+  newnight: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>',
+  history: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>',
+  players: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'
+};
+const TRASH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>';
+const CHEVRON_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg>';
+
+async function loadState() {
+  const idFromUrl = getBlobIdFromUrl();
+
+  if (!idFromUrl) {
+    // First time this exact page has ever been opened: create the group's shared ledger.
+    const seed = buildSeedState();
+    try {
+      const id = await createBlob(seed);
+      BLOB_ID = id;
+      state = seed;
+      setBlobIdInUrl(id);
+      showBanner('This page now has a unique address (see the link above) — that exact link, hash and all, is your group\'s shared ledger. Copy it from the address bar and send it to everyone.', 'info', true);
+    } catch (e) {
+      BLOB_ID = null;
+      state = seed;
+      showBanner('Could not create the shared ledger — check your connection and reload. Working locally for now, but nothing will sync until that works.', 'error', true);
+    }
+    return;
+  }
+
+  BLOB_ID = idFromUrl;
+  try {
+    const loaded = await fetchBlob(idFromUrl);
+    state = loaded && typeof loaded === 'object' ? loaded : { players: [], nights: [] };
+    state.players = state.players || [];
+    state.nights = state.nights || [];
+  } catch (e) {
+    state = { players: [], nights: [] };
+    if (e.message === 'NOT_FOUND') {
+      showBanner('This ledger link looks broken or was deleted — ask whoever set it up for the correct link.', 'error', true);
+    } else {
+      showBanner('Could not reach the shared ledger — check your connection and reload.', 'error', true);
+    }
+  }
+}
+
+async function saveState() {
+  if (!BLOB_ID) {
+    alert('Not connected to the shared ledger — this change was not saved. Check your connection and reload the page.');
+    return;
+  }
+  try {
+    await updateBlob(BLOB_ID, state);
+  } catch (e) {
+    alert('Could not save — check your connection and try again.');
+  }
+}
+
+function playerTotals() {
+  const totals = {};
+  state.players.forEach(p => totals[p] = { net: 0, nights: 0 });
+  state.nights.forEach(night => {
+    night.entries.forEach(e => {
+      if (!totals[e.player]) totals[e.player] = { net: 0, nights: 0 };
+      totals[e.player].net += (e.cashOut - e.buyIn);
+      totals[e.player].nights += 1;
+    });
+  });
+  return totals;
+}
+
+function computeSettlements(nets) {
+  let creditors = nets.filter(n => n.amount > 0.005).map(n => ({...n})).sort((a,b) => b.amount - a.amount);
+  let debtors = nets.filter(n => n.amount < -0.005).map(n => ({...n, amount: -n.amount})).sort((a,b) => b.amount - a.amount);
+  let settlements = [];
+  let i = 0, j = 0;
+  while (i < debtors.length && j < creditors.length) {
+    const pay = Math.min(debtors[i].amount, creditors[j].amount);
+    settlements.push({ from: debtors[i].player, to: creditors[j].player, amount: pay });
+    debtors[i].amount -= pay;
+    creditors[j].amount -= pay;
+    if (debtors[i].amount < 0.005) i++;
+    if (creditors[j].amount < 0.005) j++;
+  }
+  return settlements;
+}
+
+function boardRowHtml(rank, name, sub, amount, small, signed) {
+  const cls = amount > 0.005 ? 'pos' : (amount < -0.005 ? 'neg' : 'zero');
+  const medalClass = rank === 1 ? 'medal-1' : rank === 2 ? 'medal-2' : rank === 3 ? 'medal-3' : '';
+  const displayAmount = signed ? signedMoneyFmt(amount) : moneyFmt(amount);
+  return `<div class="board-row${small ? ' small' : ''}">
+    <div class="rank ${medalClass}">${rank}</div>
+    <div class="avatar${small ? ' sm' : ''}" style="background:${avatarColor(name)}">${initials(name)}</div>
+    <div class="board-main">
+      <div class="board-name">${escapeHtml(name)}</div>
+      ${sub ? `<div class="board-sub">${sub}</div>` : ''}
+    </div>
+    <div class="board-amount ${cls}">${displayAmount}</div>
+  </div>`;
+}
+
+function renderStandings() {
+  const el = document.getElementById('standings-list');
+  const totals = playerTotals();
+  const rows = Object.keys(totals).map(p => ({ player: p, ...totals[p] }));
+  if (rows.length === 0) {
+    el.innerHTML = '<div class="empty-state">Add players and record a night to see totals.</div>';
+    return;
+  }
+  rows.sort((a,b) => b.net - a.net);
+  el.innerHTML = rows.map((r, i) => boardRowHtml(
+    i + 1, r.player, `${r.nights} night${r.nights === 1 ? '' : 's'} played`, r.net, false, true
+  )).join('');
+}
+
+function renderAverages() {
+  const el = document.getElementById('averages-list');
+  const totals = playerTotals();
+  const rows = Object.keys(totals)
+    .map(p => ({ player: p, ...totals[p] }))
+    .filter(r => r.nights > 0);
+  if (rows.length === 0) {
+    el.innerHTML = '<div class="empty-state">Record a night to see averages.</div>';
+    return;
+  }
+  rows.forEach(r => r.avg = r.net / r.nights);
+  rows.sort((a,b) => b.avg - a.avg);
+  el.innerHTML = rows.map((r, i) => boardRowHtml(
+    i + 1, r.player, `${r.nights} night${r.nights === 1 ? '' : 's'} · total ${moneyFmt(r.net)}`, r.avg, false, true
+  )).join('');
+}
+
+function renderPlayersList() {
+  const el = document.getElementById('players-list');
+  if (state.players.length === 0) {
+    el.innerHTML = '<div class="empty-state">No players yet — add your regulars below.</div>';
+    return;
+  }
+  el.innerHTML = state.players.map((p, idx) => `
+    <div class="player-chip-row">
+      <div class="avatar sm" style="background:${avatarColor(p)}">${initials(p)}</div>
+      <div class="player-chip-name">${escapeHtml(p)}</div>
+      <button class="icon-btn remove-x edit-only" data-idx="${idx}" title="Remove player">${TRASH_ICON}</button>
+    </div>
+  `).join('');
+  el.querySelectorAll('.remove-x').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const idx = parseInt(btn.dataset.idx, 10);
+      const name = state.players[idx];
+      if (!confirm(`Remove ${name} from the player list? Past history is kept.`)) return;
+      state.players.splice(idx, 1);
+      await saveState();
+      renderAll();
+    });
+  });
+}
+
+function renderEntryForm() {
+  const el = document.getElementById('entry-list');
+  if (state.players.length === 0) {
+    el.innerHTML = '<div class="empty-state">Add players first, on the Players tab.</div>';
+    return;
+  }
+  el.innerHTML = state.players.map((p, idx) => `
+    <div class="entry-block">
+      <div class="entry-row">
+        <div class="entry-row-left">
+          <div class="avatar sm" style="background:${avatarColor(p)}">${initials(p)}</div>
+          <span class="board-name">${escapeHtml(p)}</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" class="played-check" data-idx="${idx}">
+          <span class="track"><span class="knob"></span></span>
+        </label>
+      </div>
+      <div class="entry-fields" data-idx="${idx}">
+        <div class="field-row">
+          <div><label>Buy-in (£)</label><input type="number" min="0" step="0.01" class="buyin-input" data-idx="${idx}" value="0"></div>
+          <div><label>Cash-out (£)</label><input type="number" min="0" step="0.01" class="cashout-input" data-idx="${idx}" value="0"></div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  el.querySelectorAll('.played-check').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const idx = cb.dataset.idx;
+      const fields = el.querySelector(`.entry-fields[data-idx="${idx}"]`);
+      fields.classList.toggle('open', cb.checked);
+      updateBalanceCheck();
+    });
+  });
+  el.querySelectorAll('.buyin-input, .cashout-input').forEach(inp => {
+    inp.addEventListener('input', updateBalanceCheck);
+  });
+  updateBalanceCheck();
+}
+
+function collectNightEntries() {
+  const entries = [];
+  state.players.forEach((p, idx) => {
+    const cb = document.querySelector(`.played-check[data-idx="${idx}"]`);
+    if (cb && cb.checked) {
+      const buyIn = parseFloat(document.querySelector(`.buyin-input[data-idx="${idx}"]`).value) || 0;
+      const cashOut = parseFloat(document.querySelector(`.cashout-input[data-idx="${idx}"]`).value) || 0;
+      entries.push({ player: p, buyIn, cashOut });
+    }
+  });
+  return entries;
+}
+
+function updateBalanceCheck() {
+  const entries = collectNightEntries();
+  const box = document.getElementById('balance-check');
+  if (entries.length === 0) {
+    box.style.display = 'none';
+    return;
+  }
+  const totalBuyIn = entries.reduce((s,e) => s + e.buyIn, 0);
+  const totalCashOut = entries.reduce((s,e) => s + e.cashOut, 0);
+  const diff = totalCashOut - totalBuyIn;
+  box.style.display = 'block';
+  if (Math.abs(diff) < 0.01) {
+    box.className = 'balance-check ok';
+    box.textContent = `Balanced — total buy-in £${totalBuyIn.toFixed(2)} matches total cash-out.`;
+  } else {
+    box.className = 'balance-check bad';
+    box.textContent = `Off by ${moneyFmt(diff)} — cash-outs should equal buy-ins. Check the numbers before saving.`;
+  }
+}
+
+async function saveNight() {
+  const dateInput = document.getElementById('night-date');
+  const date = dateInput.value || new Date().toISOString().slice(0,10);
+  const entries = collectNightEntries();
+  if (entries.length === 0) {
+    alert('Mark at least one player as having played.');
+    return;
+  }
+  const totalBuyIn = entries.reduce((s,e) => s + e.buyIn, 0);
+  const totalCashOut = entries.reduce((s,e) => s + e.cashOut, 0);
+  if (Math.abs(totalCashOut - totalBuyIn) > 0.01) {
+    if (!confirm('Buy-ins and cash-outs don\'t balance. Save anyway?')) return;
+  }
+  const nets = entries.map(e => ({ player: e.player, amount: e.cashOut - e.buyIn }));
+  const settlements = computeSettlements(nets);
+  state.nights.unshift({ id: Date.now(), date, entries, settlements });
+  await saveState();
+  dateInput.value = '';
+  renderAll();
+  document.querySelector('[data-tab="history"]').click();
+}
+
+function renderHistory() {
+  const el = document.getElementById('history-list');
+  if (state.nights.length === 0) {
+    el.innerHTML = '<div class="empty-state">No nights recorded yet.</div>';
+    return;
+  }
+  el.innerHTML = state.nights.map(night => {
+    const totalIn = night.entries.reduce((s,e) => s + e.buyIn, 0);
+    const ranked = night.entries.slice().sort((a,b) => (b.cashOut - b.buyIn) - (a.cashOut - a.buyIn));
+    const rows = ranked.map((e, i) => boardRowHtml(
+      i + 1, e.player, `buy-in £${e.buyIn.toFixed(2)} · final £${e.cashOut.toFixed(2)}`, e.cashOut - e.buyIn, true
+    )).join('');
+    const settleLines = night.settlements.length
+      ? night.settlements.map(s => `<div class="settle-row"><b>${escapeHtml(s.from)}</b><span class="settle-arrow">&#8594;</span><b>${escapeHtml(s.to)}</b><span class="settle-amount">${moneyFmt(s.amount)}</span></div>`).join('')
+      : '<div class="settle-row">Everyone broke even.</div>';
+    return `<div class="night-card" data-id="${night.id}">
+      <div class="night-summary" data-id="${night.id}">
+        <div>
+          <div class="night-date">${formatDate(night.date)}</div>
+          <div class="night-sub">${night.entries.length} players · £${totalIn.toFixed(2)} in play</div>
+        </div>
+        <div class="night-head-right">
+          <button class="btn secondary small delete-night edit-only" data-id="${night.id}">Delete</button>
+          <span class="chevron">${CHEVRON_ICON}</span>
+        </div>
+      </div>
+      <div class="night-detail">
+        <div class="board">${rows}</div>
+        <div class="settle-block">
+          <div class="settle-title">Settle up</div>
+          ${settleLines}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  el.querySelectorAll('.night-summary').forEach(head => {
+    head.addEventListener('click', (evt) => {
+      if (evt.target.closest('.delete-night')) return;
+      const id = head.dataset.id;
+      const card = el.querySelector(`.night-card[data-id="${id}"]`);
+      card.classList.toggle('open');
+    });
+  });
+  el.querySelectorAll('.delete-night').forEach(btn => {
+    btn.addEventListener('click', async (evt) => {
+      evt.stopPropagation();
+      if (!confirm('Delete this night? This cannot be undone.')) return;
+      const id = parseInt(btn.dataset.id, 10);
+      state.nights = state.nights.filter(n => n.id !== id);
+      await saveState();
+      renderAll();
+    });
+  });
+}
+
+function formatDate(iso) {
+  const d = new Date(iso + 'T00:00:00');
+  if (isNaN(d)) return iso;
+  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function renderAll() {
+  renderStandings();
+  renderAverages();
+  renderPlayersList();
+  renderEntryForm();
+  renderHistory();
+}
+
+function setupTabs() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+}
+
+const CREDENTIALS = {
+  'poker': { password: 'london', role: 'view' },
+  'admin': { password: 'noaccess', role: 'edit' }
+};
+
+function renderNav(role) {
+  const tabs = [
+    { key: 'standings', label: 'Standings' },
+    { key: 'averages', label: 'Averages' },
+    { key: 'newnight', label: 'New Night', editOnly: true },
+    { key: 'history', label: 'History' },
+    { key: 'players', label: 'Players' }
+  ];
+  const visible = tabs.filter(t => !t.editOnly || role === 'edit');
+  const nav = document.getElementById('main-nav');
+  nav.innerHTML = visible.map((t, i) =>
+    `<button class="tab-btn${i === 0 ? ' active' : ''}" data-tab="${t.key}" title="${t.label}">${ICONS[t.key]}<span>${t.label}</span></button>`
+  ).join('');
+  nav.style.display = 'flex';
+}
+
+async function startApp(role) {
+  document.body.classList.add(role === 'view' ? 'role-view' : 'role-edit');
+  renderNav(role);
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('main-content').style.display = 'block';
+  await init();
+}
+
+function setupLogin() {
+  const btn = document.getElementById('login-btn');
+  const doLogin = () => {
+    const u = document.getElementById('login-username').value.trim();
+    const p = document.getElementById('login-password').value;
+    const account = CREDENTIALS[u];
+    const errorEl = document.getElementById('login-error');
+    if (account && account.password === p) {
+      errorEl.style.display = 'none';
+      startApp(account.role);
+    } else {
+      errorEl.style.display = 'flex';
+    }
+  };
+  btn.addEventListener('click', doLogin);
+  document.getElementById('login-password').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') doLogin();
+  });
+  document.getElementById('login-username').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') doLogin();
+  });
+}
+
+async function init() {
+  await loadState();
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+
+  if (BLOB_ID) {
+    const copyBtn = document.getElementById('copy-link-btn');
+    copyBtn.style.display = 'inline-flex';
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        copyBtn.textContent = 'Copied!';
+        setTimeout(() => { copyBtn.textContent = 'Copy invite link'; }, 1800);
+      } catch (e) {
+        prompt('Copy this link and share it with your group:', window.location.href);
+      }
+    });
+  }
+
+  document.getElementById('night-date').value = new Date().toISOString().slice(0,10);
+
+  setupTabs();
+  renderAll();
+
+  document.getElementById('add-player-btn').addEventListener('click', async () => {
+    const input = document.getElementById('new-player-name');
+    const name = input.value.trim();
+    if (!name) return;
+    if (state.players.includes(name)) { alert('That player is already on the list.'); return; }
+    state.players.push(name);
+    input.value = '';
+    await saveState();
+    renderAll();
+  });
+  document.getElementById('new-player-name').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') document.getElementById('add-player-btn').click();
+  });
+
+  document.getElementById('save-night-btn').addEventListener('click', saveNight);
+
+  document.getElementById('reset-btn').addEventListener('click', async () => {
+    if (!confirm('This clears all players and all history for everyone using this link. Continue?')) return;
+    state = { players: [], nights: [] };
+    await saveState();
+    renderAll();
+  });
+}
+
+setupLogin();
+</script>
+</body>
+</html>
