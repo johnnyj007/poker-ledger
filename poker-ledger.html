@@ -649,7 +649,8 @@
 </div>
 
 <script>
-const JSONBLOB_BASE = 'https://jsonblob.com/api/jsonBlob';
+const JSONBIN_BASE = 'https://api.jsonbin.io/v3/b';
+const JSONBIN_MASTER_KEY = '$2a$10$myizIQoz5j3v3lZZGkwbEuqKYqMAOj9Yg/4DBfhZ8s7fD9bmA/KgC';
 let BLOB_ID = null;
 let state = { players: [], nights: [] };
 
@@ -675,28 +676,38 @@ function setBlobIdInUrl(id) {
 }
 
 async function createBlob(initialData) {
-  const res = await fetch(JSONBLOB_BASE, {
+  const res = await fetch(JSONBIN_BASE, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Master-Key': JSONBIN_MASTER_KEY,
+      'X-Bin-Private': 'false'
+    },
     body: JSON.stringify(initialData)
   });
   if (!res.ok) throw new Error('CREATE_FAILED');
-  const location = res.headers.get('Location');
-  if (!location) throw new Error('NO_LOCATION');
-  return location.split('/').pop();
+  const json = await res.json();
+  if (!json || !json.metadata || !json.metadata.id) throw new Error('NO_ID');
+  return json.metadata.id;
 }
 
 async function fetchBlob(id) {
-  const res = await fetch(`${JSONBLOB_BASE}/${id}`, { headers: { 'Accept': 'application/json' } });
+  const res = await fetch(`${JSONBIN_BASE}/${id}/latest`, {
+    headers: { 'X-Master-Key': JSONBIN_MASTER_KEY }
+  });
   if (res.status === 404) throw new Error('NOT_FOUND');
   if (!res.ok) throw new Error('FETCH_FAILED');
-  return await res.json();
+  const json = await res.json();
+  return json.record;
 }
 
 async function updateBlob(id, data) {
-  const res = await fetch(`${JSONBLOB_BASE}/${id}`, {
+  const res = await fetch(`${JSONBIN_BASE}/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Master-Key': JSONBIN_MASTER_KEY
+    },
     body: JSON.stringify(data)
   });
   if (!res.ok) throw new Error('SAVE_FAILED');
