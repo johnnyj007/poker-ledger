@@ -1,0 +1,37 @@
+{
+  "name": "Poker Ledger",
+  "short_name": "Poker Ledger",
+  "description": "Home game buy-ins, cash-outs, and who owes who.",
+  "start_url": "./poker-ledger.html#g=6aa5f2daffd5d16053ffe9bc",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0e3527",
+  "theme_color": "#0e3527",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
